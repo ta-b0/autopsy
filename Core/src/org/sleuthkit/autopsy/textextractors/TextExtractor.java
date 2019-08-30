@@ -18,10 +18,19 @@
  */
 package org.sleuthkit.autopsy.textextractors;
 
+import com.ethteck.decodetect.core.Decodetect;
+import com.ethteck.decodetect.core.DecodetectResult;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import org.openide.util.Lookup;
+import org.sleuthkit.datamodel.Content;
+import org.sleuthkit.datamodel.ReadContentInputStream;
 
 /**
  * Extracts the text out of Content instances and exposes them as a Reader.
@@ -89,5 +98,27 @@ public interface TextExtractor {
         public InitReaderException(String msg) {
             super(msg);
         }
+    }
+
+    static Charset getDecodetectCharset(Content content) {
+        InputStream stream = new BufferedInputStream(new ReadContentInputStream(content));
+        Charset detectedCharset = null;
+
+        try {
+            int maxBytes = 100000;
+            int numBytes = Math.min(stream.available(), maxBytes);
+            byte[] targetArray = new byte[numBytes];
+            stream.read(targetArray);
+            List<DecodetectResult> results = Decodetect.DECODETECT.getResults(targetArray);
+            if (results.size() > 0) {
+                DecodetectResult topResult = results.get(0);
+                if (topResult.getConfidence() > 0.4) {
+                    detectedCharset = topResult.getEncoding();
+                }
+            }
+            stream.reset();
+        } catch (IOException ignored) {
+        }
+        return detectedCharset;
     }
 }

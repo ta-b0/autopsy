@@ -20,9 +20,13 @@ package org.sleuthkit.autopsy.keywordsearch;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.BufferedInputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.apache.tika.parser.txt.CharsetMatch;
+import org.sleuthkit.autopsy.textextractors.TextExtractor;
 import org.sleuthkit.datamodel.AbstractFile;
 import org.sleuthkit.datamodel.ReadContentInputStream;
 
@@ -38,7 +42,20 @@ final class TextFileExtractor {
     //files while hopefully working on all files with a valid text encoding
     static final private int MIN_MATCH_CONFIDENCE = 20;
 
+    private final Charset detectedCharset;
+
+    TextFileExtractor(Charset detectedCharset) {
+        this.detectedCharset = detectedCharset;
+    }
+
     public Reader getReader(AbstractFile source) throws TextFileExtractorException {
+        String mimeType = source.getMIMEType();
+        if (mimeType.equals(MimeTypes.PLAIN_TEXT)) {
+            if (detectedCharset != null) {
+                return new InputStreamReader(new BufferedInputStream(new ReadContentInputStream(source)), detectedCharset);
+            }
+        }
+
         CharsetDetector detector = new CharsetDetector();
         //wrap stream in a BufferedInputStream so that it supports the mark/reset methods necessary for the CharsetDetector
         InputStream stream = new BufferedInputStream(new ReadContentInputStream(source));

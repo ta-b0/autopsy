@@ -22,12 +22,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.io.CharSource;
 import java.io.IOException;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import org.apache.tika.mime.MimeTypes;
 import org.openide.util.Lookup;
 import org.openide.util.NbBundle;
 import org.openide.util.NbBundle.Messages;
@@ -626,14 +628,20 @@ public final class KeywordSearchIngestModule implements FileIngestModule {
 
             boolean wasTextAdded = false;
 
+            Charset decodetectCharset = null;
             //extract text with one of the extractors, divide into chunks and index with Solr
             try {
                 //logger.log(Level.INFO, "indexing: " + aFile.getName());
                 if (context.fileIngestIsCancelled()) {
                     return;
                 }
-                if (fileType.equals("application/octet-stream")) {
+                if (fileType.equals(MimeTypes.OCTET_STREAM)) {
                     extractStringsAndIndex(aFile);
+                    return;
+                }
+                decodetectCharset = TextExtractor.getDecodetectCharset(aFile);
+                if (fileType.equals(MimeTypes.PLAIN_TEXT) && decodetectCharset != null) {
+                    indexTextFile(aFile, decodetectCharset);
                     return;
                 }
                 if (!extractTextAndIndex(aFile)) {
@@ -657,26 +665,31 @@ public final class KeywordSearchIngestModule implements FileIngestModule {
             if ((wasTextAdded == false) && (aFile.getNameExtension().equalsIgnoreCase("txt") && !(aFile.getType().equals(TskData.TSK_DB_FILES_TYPE_ENUM.CARVED)))) {
                 //Carved Files should be the only type of unallocated files capable of a txt extension and 
                 //should be ignored by the TextFileExtractor because they may contain more than one text encoding
-                try {
-                    TextFileExtractor textFileExtractor = new TextFileExtractor();
-                    Reader textReader = textFileExtractor.getReader(aFile);
-                    if (textReader == null) {
-                        logger.log(Level.INFO, "Unable to extract with TextFileExtractor, Reader was null for file: {0}", aFile.getName());
-                    } else if (Ingester.getDefault().indexText(textReader, aFile.getId(), aFile.getName(), aFile, context)) {
-                        putIngestStatus(jobId, aFile.getId(), IngestStatus.TEXT_INGESTED);
-                        wasTextAdded = true;
-                    }
-                } catch (IngesterException ex) {
-                    logger.log(Level.WARNING, "Unable to index as unicode", ex);
-                } catch (TextFileExtractorException ex) {
-                    logger.log(Level.INFO, "Could not extract text with TextFileExtractor", ex);
-                }
+                wasTextAdded = indexTextFile(aFile, decodetectCharset);
             }
 
             // if it wasn't supported or had an error, default to strings
             if (wasTextAdded == false) {
                 extractStringsAndIndex(aFile);
             }
+        }
+
+        private boolean indexTextFile(AbstractFile aFile, Charset detectedCharset) {
+            try {
+                TextFileExtractor textFileExtractor = new TextFileExtractor(detectedCharset);
+                Reader textReader = textFileExtractor.getReader(aFile);
+                if (textReader == null) {
+                    logger.log(Level.INFO, "Unable to extract with TextFileExtractor, Reader was null for file: {0}", aFile.getName());
+                } else if (Ingester.getDefault().indexText(textReader, aFile.getId(), aFile.getName(), aFile, context)) {
+                    putIngestStatus(jobId, aFile.getId(), IngestStatus.TEXT_INGESTED);
+                    return true;
+                }
+            } catch (IngesterException ex) {
+                logger.log(Level.WARNING, "Unable to index as unicode", ex);
+            } catch (TextFileExtractorException ex) {
+                logger.log(Level.INFO, "Could not extract text with TextFileExtractor", ex);
+            }
+            return false;
         }
     }
 }

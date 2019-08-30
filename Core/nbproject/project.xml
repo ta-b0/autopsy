@@ -781,6 +781,14 @@
                 <runtime-relative-path>ext/okio-1.6.0.jar</runtime-relative-path>
                 <binary-origin>release/modules/ext/okio-1.6.0.jar</binary-origin>
             </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/decodetect-core-0.3.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/decodetect-core-0.3.jar</binary-origin>
+            </class-path-extension>
+            <class-path-extension>
+                <runtime-relative-path>ext/jutf7-1.0.0.jar</runtime-relative-path>
+                <binary-origin>release/modules/ext/jutf7-1.0.0.jar</binary-origin>
+            </class-path-extension>
         </data>
     </configuration>
 </project>
