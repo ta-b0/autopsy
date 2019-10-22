@@ -18,6 +18,7 @@
  */
 package org.sleuthkit.autopsy.modules.filetypeid;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,7 +29,9 @@ import java.util.stream.Collectors;
 import org.apache.tika.Tika;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MimeTypes;
+import org.openide.util.Exceptions;
 import org.sleuthkit.autopsy.coreutils.Logger;
+import org.sleuthkit.autopsy.textextractors.TextExtractor;
 import org.sleuthkit.datamodel.AbstractFile;
 import org.sleuthkit.datamodel.ReadContentInputStream;
 import org.sleuthkit.datamodel.TskCoreException;
@@ -248,6 +251,17 @@ public class FileTypeDetector {
                         tikaType = tika.detect(secondPassTikaStream, file.getName());
                         mimeType = tikaType.replace("tika-", ""); //NON-NLS
                         mimeType = removeOptionalParameter(mimeType);
+                    }
+                } else {
+                    /*
+                     * If the file was marked as an octet stream and the extension is .txt, try to detect a text
+                     * encoding with Decodetect.
+                     */
+                    if (file.getNameExtension().equals("txt")) {
+                        Charset detectedCharset = TextExtractor.getEncoding(file);
+                        if (detectedCharset != TextExtractor.UNKNOWN_CHARSET) {
+                            mimeType = MimeTypes.PLAIN_TEXT;
+                        }
                     }
                 }
 
