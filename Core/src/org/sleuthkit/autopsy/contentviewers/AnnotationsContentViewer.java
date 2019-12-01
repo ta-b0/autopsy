@@ -126,10 +126,10 @@ public class AnnotationsContentViewer extends javax.swing.JPanel implements Data
         try {
             SleuthkitCase tskCase = Case.getCurrentCaseThrows().getSleuthkitCase();
 
-            startSection(html, "Selected Item");
+            startSection(html, "選択したアイテム");
             List<ContentTag> fileTagsList = tskCase.getContentTagsByContent(content);
             if (fileTagsList.isEmpty()) {
-                addMessage(html, "There are no tags for the selected content.");
+                addMessage(html, "選択した内容にはタグがありません。");
             } else {
                 for (ContentTag tag : fileTagsList) {
                     addTagEntry(html, tag);
@@ -155,10 +155,10 @@ public class AnnotationsContentViewer extends javax.swing.JPanel implements Data
         try {
             SleuthkitCase tskCase = Case.getCurrentCaseThrows().getSleuthkitCase();
 
-            startSection(html, "Selected Item");
+            startSection(html, "選択したアイテム");
             List<BlackboardArtifactTag> artifactTagsList = tskCase.getBlackboardArtifactTagsByArtifact(artifact);
             if (artifactTagsList.isEmpty()) {
-                addMessage(html, "There are no tags for the selected artifact.");
+                addMessage(html, "選択したアーティファクトにはタグがありません。");
             } else {
                 for (BlackboardArtifactTag tag : artifactTagsList) {
                     addTagEntry(html, tag);
