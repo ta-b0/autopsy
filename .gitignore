@@ -91,4 +91,4 @@ hs_err_pid*.log
 *.vhd
 *.E01
 
-!*.Bundle_ja.properties
+!/**/*.Bundle_ja.properties
