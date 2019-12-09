@@ -90,3 +90,5 @@ hs_err_pid*.log
 *.img
 *.vhd
 *.E01
+
+!*.Bundle_ja.properties
